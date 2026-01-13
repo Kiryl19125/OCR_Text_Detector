@@ -9,6 +9,7 @@ class MainView:
         MainView._init_theme()
         MainView._load_textures()
         MainView._create_help_window()
+        MainView._create_loading_window()
 
         MainView._create_main_window()
 
@@ -48,6 +49,13 @@ class MainView:
     def _create_help_window():
         with dpg.window(tag=Tag.HELP_WINDOW, modal=True, show=False):
             dpg.add_text("Here is should be help")
+
+    @staticmethod
+    def _create_loading_window():
+        with dpg.window(tag=Tag.LOADING_WINDOW, show=False, modal=True, no_close=True, no_title_bar=True, width=300):
+            dpg.add_text("Please Wait...")
+            dpg.add_separator()
+            dpg.add_loading_indicator(indent=110)
 
     @staticmethod
     def _create_tooltips():
