@@ -1,0 +1,101 @@
+import dearpygui.dearpygui as dpg
+from view.tags import Tag
+
+class MainView:
+
+    @staticmethod
+    def create_view():
+        MainView._init_font()
+        MainView._init_theme()
+        MainView._load_textures()
+        MainView._create_help_window()
+
+        MainView._create_main_window()
+
+        MainView._create_tooltips()
+
+    @staticmethod
+    def _create_main_window():
+        with dpg.window(tag=Tag.MAIN_WINDOW):
+            with dpg.menu_bar():
+                dpg.add_menu_item(tag=Tag.HELP_MENU_BUTTON, label="Help")
+            with dpg.table(header_row=False, resizable=True, width=-1, height=-1):
+                dpg.add_table_column(init_width_or_weight=40)
+                dpg.add_table_column(init_width_or_weight=60)
+                with dpg.table_row():
+                    with dpg.table_cell(): # First column
+                        MainView._create_first_column()
+                    with dpg.table_cell(): # Second column
+                        MainView._create_second_column()
+
+    @staticmethod
+    def _create_first_column():
+        with dpg.group(horizontal=True):
+            dpg.add_image_button(tag=Tag.LOAD_IMAGE_BUTTON, texture_tag=Tag.LOAD_IMAGE_TEXTURE)
+            dpg.add_image_button(tag=Tag.DETECT_TEXT_BUTTON, texture_tag=Tag.DETECT_TEXT_TEXTURE)
+        dpg.add_separator()
+        with dpg.child_window():
+            pass
+
+    @staticmethod
+    def _create_second_column():
+        with dpg.child_window():
+            dpg.add_image_button(tag=Tag.COPY_TEXT_BUTTON, texture_tag=Tag.COPY_TEXT_TEXTURE)
+            dpg.add_separator()
+            dpg.add_input_text(tag=Tag.RESULT_TEXT, multiline=True, width=-1, height=-1)
+
+    @staticmethod
+    def _create_help_window():
+        with dpg.window(tag=Tag.HELP_WINDOW, modal=True, show=False):
+            dpg.add_text("Here is should be help")
+
+    @staticmethod
+    def _create_tooltips():
+        with dpg.tooltip(parent=Tag.LOAD_IMAGE_BUTTON):
+            dpg.add_text("Load new image")
+        with dpg.tooltip(parent=Tag.DETECT_TEXT_BUTTON):
+            dpg.add_text("Detect text in image")
+        with dpg.tooltip(parent=Tag.COPY_TEXT_BUTTON):
+            dpg.add_text("Copy text to clipboard")
+        with dpg.tooltip(parent=Tag.HELP_MENU_BUTTON):
+            dpg.add_text("Click here for more information")
+
+    @staticmethod
+    def _load_textures():
+        width1, height1, _, data1 = dpg.load_image("resources/images/load_image.png")
+        width2, height2, _, data2 = dpg.load_image("resources/images/detect_image_64.png")
+        width3, height3, _, data3 = dpg.load_image("resources/images/copy_text.png")
+        with dpg.texture_registry():
+            dpg.add_static_texture(width=width1, height=height1, default_value=data1, tag=Tag.LOAD_IMAGE_TEXTURE)
+            dpg.add_static_texture(width=width2, height=height2, default_value=data2, tag=Tag.DETECT_TEXT_TEXTURE)
+            dpg.add_static_texture(width=width3, height=height3, default_value=data3, tag=Tag.COPY_TEXT_TEXTURE)
+
+    @staticmethod
+    def _init_font():
+        with dpg.font_registry():
+            dpg.add_font(file="resources/fonts/FallingSky-JKwK.otf", size=20, tag=Tag.DEFAULT_FONT)
+
+        dpg.bind_font(font=Tag.DEFAULT_FONT)
+
+    @staticmethod
+    def _init_theme():
+        with dpg.theme() as global_theme:
+            with dpg.theme_component(dpg.mvAll):
+                # Styling
+                dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 8, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 8, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 8, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_TabRounding, 8, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_WindowTitleAlign, 0.5, 0.5, category=dpg.mvThemeCat_Core)
+                dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 12, category=dpg.mvThemeCat_Core)
+
+                # colors
+                dpg.add_theme_color(dpg.mvThemeCol_Button, (76, 127, 240))
+                dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (76, 127, 240))
+                dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (30, 33, 38))
+                dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (30, 33, 38))
+                dpg.add_theme_color(dpg.mvThemeCol_MenuBarBg, (44, 49, 60))
+
+
+        dpg.bind_theme(global_theme)
