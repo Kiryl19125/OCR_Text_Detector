@@ -1,4 +1,5 @@
 import dearpygui.dearpygui as dpg
+import tomllib
 from view.tags import Tag
 from view.themes import create_theme_imgui_default, create_theme_imgui_light, create_theme_imgui_dark
 
@@ -21,8 +22,8 @@ class MainView:
         with dpg.window(tag=Tag.MAIN_WINDOW):
             with dpg.menu_bar():
                 with dpg.menu(label="Theme"):
-                    dpg.add_radio_button(items=["Default", "Dark", "Light"], default_value="Default",
-                                         callback=MainView._change_global_theme)
+                    dpg.add_radio_button(tag=Tag.THEME_RADIO_BUTTON ,items=["Default", "Dark", "Light"],
+                                         default_value="Default", callback=MainView._change_global_theme)
                 dpg.add_menu_item(tag=Tag.HELP_MENU_BUTTON, label="Help")
             with dpg.table(header_row=False, resizable=True, width=-1, height=-1):
                 dpg.add_table_column(init_width_or_weight=40)
@@ -105,14 +106,30 @@ class MainView:
 
     @staticmethod
     def _init_theme():
-        dpg.bind_theme(create_theme_imgui_default())
-
+        try:
+            with open("config/config.toml", "rb") as file:
+                config = tomllib.load(file)
+                if config["theme"] == "default":
+                    dpg.bind_theme(create_theme_imgui_default())
+                elif config["theme"] == "light":
+                    dpg.bind_theme(create_theme_imgui_light())
+                elif config["theme"] == "dark":
+                    dpg.bind_theme(create_theme_imgui_dark())
+        except Exception as e:
+            print(e)
+            dpg.bind_theme(create_theme_imgui_default())
 
     @staticmethod
     def _change_global_theme(_sender, value):
         if value == "Default":
+            with open("config/config.toml", "w") as f:
+                f.write(f'theme = "default"\n')
             dpg.bind_theme(create_theme_imgui_default())
         elif value == "Dark":
+            with open("config/config.toml", "w") as f:
+                f.write(f'theme = "dark"\n')
             dpg.bind_theme(create_theme_imgui_dark())
         elif value == "Light":
+            with open("config/config.toml", "w") as f:
+                f.write(f'theme = "light"\n')
             dpg.bind_theme(create_theme_imgui_light())
