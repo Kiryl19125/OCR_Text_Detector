@@ -47,8 +47,22 @@ class MainView:
 
     @staticmethod
     def _create_help_window():
-        with dpg.window(tag=Tag.HELP_WINDOW, modal=True, show=False):
-            dpg.add_text("Here is should be help")
+        with dpg.window(tag=Tag.HELP_WINDOW, label="Help Window", show=False, width=725, height=320):
+            dpg.add_text("Welcome to OCR Text Detector!")
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_image(texture_tag=Tag.LOAD_IMAGE_TEXTURE)
+                dpg.add_text("Select Image - Opens a file dialog to choose an image for text detection.")
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_image(texture_tag=Tag.DETECT_TEXT_TEXTURE)
+                dpg.add_text("Process Image - Analyzes the selected image and highlights detected text with green outlines.")
+            dpg.add_separator()
+            with dpg.group(horizontal=True):
+                dpg.add_image(texture_tag=Tag.COPY_TEXT_TEXTURE)
+                dpg.add_text("Copy Text - Copies all detected text to clipboard.")
+            dpg.add_separator()
+            dpg.add_text("Supported formats: PNG, JPG, JPEG")
 
     @staticmethod
     def _create_loading_window():

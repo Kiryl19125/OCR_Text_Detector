@@ -1,8 +1,10 @@
 import dearpygui.dearpygui as dpg
 import xdialog
+import pyperclip
 from view.main_view import MainView
 from model.model import Model
 from view.tags import Tag
+from concurrent.futures import ThreadPoolExecutor
 
 class Controller:
 
@@ -10,12 +12,14 @@ class Controller:
         self._model = model
         self._view = view
         self._image_path = ""
+        self.executor = ThreadPoolExecutor(max_workers=2)
 
     def init_view(self):
         self._view.create_view()
 
     def init_controller(self):
         dpg.set_item_callback(item=Tag.HELP_MENU_BUTTON, callback=Controller.help_callback)
+        dpg.set_item_callback(item=Tag.COPY_TEXT_BUTTON, callback=Controller.copy_to_clipboard_callback)
         dpg.set_item_callback(item=Tag.LOAD_IMAGE_BUTTON, callback=self.load_image_callback)
         dpg.set_item_callback(item=Tag.DETECT_TEXT_BUTTON, callback=self.process_image_callback)
 
@@ -41,19 +45,34 @@ class Controller:
 
     def process_image_callback(self):
         if self._image_path:
-            result = self._model.get_texture_data(self._image_path)
+            feature = self.executor.submit(lambda: self._model.get_texture_data(self._image_path))
+            feature.add_done_callback(Controller._on_complete)
             dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
             dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
-            with dpg.texture_registry():
-                dpg.add_static_texture(width=result.width, height=result.height,
-                                       default_value=result.texture_data, tag=Tag.CURRENT_IMAGE_TEXTURE)
-
-            dpg.add_image(tag=Tag.CURRENT_IMAGE, texture_tag=Tag.CURRENT_IMAGE_TEXTURE, parent=Tag.IMAGE_WINDOW,
-                          width=600, height=Controller._calculate_height(
-                    new_width=600, current_width=result.width, current_height=result.height))
-            dpg.set_value(item=Tag.RESULT_TEXT, value=result.detected_text)
+            Controller._center_window(Tag.LOADING_WINDOW)
+            dpg.configure_item(item=Tag.LOADING_WINDOW, show=True)
         else:
             xdialog.error(title="Error", message="No Image Selected!")
+
+    @staticmethod
+    def copy_to_clipboard_callback():
+        pyperclip.copy(dpg.get_value(Tag.RESULT_TEXT))
+        xdialog.info(title="Info", message="The text has been successfully copied")
+
+    @staticmethod
+    def _on_complete(feature):
+        result = feature.result()
+
+        with dpg.texture_registry():
+            dpg.add_static_texture(width=result.width, height=result.height,
+                                   default_value=result.texture_data, tag=Tag.CURRENT_IMAGE_TEXTURE)
+
+        dpg.add_image(tag=Tag.CURRENT_IMAGE, texture_tag=Tag.CURRENT_IMAGE_TEXTURE, parent=Tag.IMAGE_WINDOW,
+                      width=600, height=Controller._calculate_height(
+                    new_width=600, current_width=result.width, current_height=result.height
+            ))
+        dpg.set_value(item=Tag.RESULT_TEXT, value=result.detected_text)
+        dpg.configure_item(item=Tag.LOADING_WINDOW, show=False)
 
     @staticmethod
     def _center_window(tag):

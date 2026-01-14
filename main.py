@@ -14,7 +14,7 @@ def main():
     controller.init_view()
     controller.init_controller()
 
-    dpg.create_viewport(title="Text Detection App", resizable=True)
+    dpg.create_viewport(title="OCR Text Detector", resizable=True)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.maximize_viewport()
