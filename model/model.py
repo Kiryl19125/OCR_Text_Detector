@@ -21,6 +21,14 @@ class TextureResult:
     detected_text: str
 
 
+@dataclass
+class HighlightOptions:
+    """Options for highlighting detected text."""
+
+    line_color: tuple[int, int, int] = (0, 255, 0)
+    line_thickness: int = 2
+    show_result: bool = False
+
 
 class Model:
     """A class for detecting and highlighting text in icons using EasyOCR."""
@@ -54,7 +62,7 @@ class Model:
         Returns:
             List of tuples containing (bounding_box, text, confidence).
         """
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path)  # pylint: disable=no-member
         if image is None:
             raise FileNotFoundError(f"Could not read image: {image_path}")
 
@@ -64,9 +72,7 @@ class Model:
         self,
         image_path: str,
         output_path: str | None = None,
-        line_color: tuple[int, int, int] = (0, 255, 0),
-        line_thickness: int = 2,
-        show_result: bool = False,
+        options: HighlightOptions | None = None,
     ) -> list[tuple[list, str, float]]:
         """
         Detect text in an image and draw polylines around detected text.
@@ -74,38 +80,39 @@ class Model:
         Args:
             image_path: Path to the input image.
             output_path: Path to save the output image. If None, won't save.
-            line_color: BGR color tuple for the polylines. Defaults to green.
-            line_thickness: Thickness of the polylines.
-            show_result: Whether to display the result in a window.
+            options: HighlightOptions for customizing the output.
 
         Returns:
             List of tuples containing (bounding_box, text, confidence).
         """
-        image = cv2.imread(image_path)
+        if options is None:
+            options = HighlightOptions()
+
+        image = cv2.imread(image_path)  # pylint: disable=no-member
         if image is None:
             raise FileNotFoundError(f"Could not read image: {image_path}")
 
         results = self.reader.readtext(image)
 
         # Draw polylines around detected text
-        for bbox, text, confidence in results:
+        for bbox, _, _ in results:
             points = np.array(bbox, dtype=np.int32)
-            cv2.polylines(
+            cv2.polylines(  # pylint: disable=no-member
                 image,
                 [points],
                 isClosed=True,
-                color=line_color,
-                thickness=line_thickness,
+                color=options.line_color,
+                thickness=options.line_thickness,
             )
 
         if output_path:
-            cv2.imwrite(output_path, image)
+            cv2.imwrite(output_path, image)  # pylint: disable=no-member
             print(f"Result saved to: {output_path}")
 
-        if show_result:
-            cv2.imshow("Text Detection Result", image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        if options.show_result:
+            cv2.imshow("Text Detection Result", image)  # pylint: disable=no-member
+            cv2.waitKey(0)  # pylint: disable=no-member
+            cv2.destroyAllWindows()  # pylint: disable=no-member
 
         return results
 
@@ -117,7 +124,7 @@ class Model:
             results: List of detection results from detect() or detect_and_highlight().
         """
         print("\n--- Detected Text ---")
-        for i, (bbox, text, confidence) in enumerate(results, 1):
+        for i, (_, text, confidence) in enumerate(results, 1):
             print(f"{i}. Text: '{text}' (Confidence: {confidence:.2%})")
         print("---------------------\n")
 
@@ -140,28 +147,38 @@ class Model:
         if not results:
             return ""
 
-        # Extract text with position info (using center Y and left X of bounding box)
-        text_items: list[dict] = []
-        for bbox, text, confidence in results:
-            points = np.array(bbox)
-            center_y = np.mean(points[:, 1])
-            left_x = np.min(points[:, 0])
-            height = np.max(points[:, 1]) - np.min(points[:, 1])
-            text_items.append({
-                "text": text,
-                "center_y": center_y,
-                "left_x": left_x,
-                "height": height,
-            })
-
-        # Calculate average text height for threshold
+        text_items = self._extract_text_positions(results)
         avg_height = np.mean([item["height"] for item in text_items])
         y_threshold = avg_height * line_threshold
 
-        # Sort by vertical position first
+        lines = self._group_items_into_lines(text_items, y_threshold)
+
+        return self._join_lines(lines)
+
+    def _extract_text_positions(
+        self,
+        results: list[tuple[list, str, float]],
+    ) -> list[dict]:
+        """Extract text with position info from OCR results."""
+        text_items: list[dict] = []
+        for bbox, text, _ in results:
+            points = np.array(bbox)
+            text_items.append({
+                "text": text,
+                "center_y": np.mean(points[:, 1]),
+                "left_x": np.min(points[:, 0]),
+                "height": np.max(points[:, 1]) - np.min(points[:, 1]),
+            })
+        return text_items
+
+    def _group_items_into_lines(
+        self,
+        text_items: list[dict],
+        y_threshold: float,
+    ) -> list[list[dict]]:
+        """Group text items into lines based on vertical proximity."""
         text_items.sort(key=lambda item: item["center_y"])
 
-        # Group into lines
         lines: list[list[dict]] = []
         current_line: list[dict] = [text_items[0]]
 
@@ -173,13 +190,15 @@ class Model:
                 current_line = [item]
         lines.append(current_line)
 
-        # Sort each line by horizontal position and join
+        return lines
+
+    def _join_lines(self, lines: list[list[dict]]) -> str:
+        """Sort each line by horizontal position and join into string."""
         result_lines: list[str] = []
         for line in lines:
             line.sort(key=lambda item: item["left_x"])
             line_text = " ".join(item["text"] for item in line)
             result_lines.append(line_text)
-
         return "\n".join(result_lines)
 
     def get_texture_data(
@@ -193,7 +212,7 @@ class Model:
         Detect text and return texture data compatible with DearPyGui.
 
         The texture data is a flat list of floats (RGBA values normalized to 0-1)
-        that can be used directly with dpg.add_static_texture() or dpg.add_dynamic_texture().
+        that can be used directly with dpg.add_static_texture().
 
         Text is automatically grouped into lines based on vertical position,
         making it suitable for reading documents and books.
@@ -203,54 +222,17 @@ class Model:
             line_color: BGR color tuple for the polylines. Defaults to green.
             line_thickness: Thickness of the polylines.
             line_threshold: Threshold for grouping text into same line.
-                            Expressed as a fraction of average text height.
-                            Lower values = stricter line grouping.
 
         Returns:
             TextureResult containing texture_data, width, height, and detected_text.
-
-        Example usage with DearPyGui:
-            result = detector.get_texture_data("image.png")
-
-            with dpg.texture_registry():
-                dpg.add_static_texture(
-                    width=result.width,
-                    height=result.height,
-                    default_value=result.texture_data,
-                    tag="ocr_texture"
-                )
-
-            with dpg.window(label="OCR Result"):
-                dpg.add_image("ocr_texture")
-                dpg.add_text(result.detected_text)
         """
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path)  # pylint: disable=no-member
         if image is None:
             raise FileNotFoundError(f"Could not read image: {image_path}")
 
         results = self.reader.readtext(image)
-
-        # Draw polylines around detected text
-        for bbox, text, confidence in results:
-            points = np.array(bbox, dtype=np.int32)
-            cv2.polylines(
-                image,
-                [points],
-                isClosed=True,
-                color=line_color,
-                thickness=line_thickness,
-            )
-
-        # Convert BGR to RGBA
-        image_rgba = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
-
-        # Get dimensions
-        height, width = image_rgba.shape[:2]
-
-        # Normalize to 0-1 range and flatten for DearPyGui
-        texture_data = (image_rgba.astype(np.float32) / 255.0).flatten().tolist()
-
-        # Group detected text by lines
+        image = self._draw_polylines(image, results, line_color, line_thickness)
+        texture_data, width, height = self._convert_to_texture(image)
         combined_text = self._group_text_by_lines(results, line_threshold)
 
         return TextureResult(
@@ -259,3 +241,33 @@ class Model:
             height=height,
             detected_text=combined_text,
         )
+
+    def _draw_polylines(
+        self,
+        image: np.ndarray,
+        results: list[tuple[list, str, float]],
+        line_color: tuple[int, int, int],
+        line_thickness: int,
+    ) -> np.ndarray:
+        """Draw polylines around detected text regions."""
+        for bbox, _, _ in results:
+            points = np.array(bbox, dtype=np.int32)
+            cv2.polylines(  # pylint: disable=no-member
+                image,
+                [points],
+                isClosed=True,
+                color=line_color,
+                thickness=line_thickness,
+            )
+        return image
+
+    def _convert_to_texture(
+        self,
+        image: np.ndarray,
+    ) -> tuple[list[float], int, int]:
+        """Convert BGR image to RGBA texture data for DearPyGui."""
+        # pylint: disable=no-member
+        image_rgba = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
+        height, width = image_rgba.shape[:2]
+        texture_data = (image_rgba.astype(np.float32) / 255.0).flatten().tolist()
+        return texture_data, width, height
