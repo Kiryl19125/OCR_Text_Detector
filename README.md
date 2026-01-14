@@ -15,8 +15,8 @@ A desktop application for detecting and extracting text from images using OCR (O
 
 ## Screenshots
 
-![Image loaded](resources/screenshots/Screenshot 2026-01-15 at 00.23.06.png)
-![Image loaded](resources/screenshots/Screenshot 2026-01-15 at 00.22.40.png)
+![Image loaded](resources/screenshots/screenshot_1.png)
+![Image loaded](resources/screenshots/screenshot_2.png)
 
 ## Installation
 
