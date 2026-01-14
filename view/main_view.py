@@ -84,9 +84,9 @@ class MainView:
 
     @staticmethod
     def _load_textures():
-        width1, height1, _, data1 = dpg.load_image("resources/images/load_image.png")
-        width2, height2, _, data2 = dpg.load_image("resources/images/detect_image_64.png")
-        width3, height3, _, data3 = dpg.load_image("resources/images/copy_text.png")
+        width1, height1, _, data1 = dpg.load_image("resources/icons/load_image.png")
+        width2, height2, _, data2 = dpg.load_image("resources/icons/detect_image_64.png")
+        width3, height3, _, data3 = dpg.load_image("resources/icons/copy_text.png")
         with dpg.texture_registry():
             dpg.add_static_texture(width=width1, height=height1, default_value=data1, tag=Tag.LOAD_IMAGE_TEXTURE)
             dpg.add_static_texture(width=width2, height=height2, default_value=data2, tag=Tag.DETECT_TEXT_TEXTURE)

@@ -1,6 +1,6 @@
 """
 Text detection and highlighting using EasyOCR and OpenCV.
-Detects text in images and draws green rectangles around detected text regions.
+Detects text in icons and draws green rectangles around detected text regions.
 Compatible with DearPyGui for desktop application integration.
 """
 
@@ -21,8 +21,9 @@ class TextureResult:
     detected_text: str
 
 
+
 class Model:
-    """A class for detecting and highlighting text in images using EasyOCR."""
+    """A class for detecting and highlighting text in icons using EasyOCR."""
 
     def __init__(
         self,
@@ -120,12 +121,73 @@ class Model:
             print(f"{i}. Text: '{text}' (Confidence: {confidence:.2%})")
         print("---------------------\n")
 
+    def _group_text_by_lines(
+        self,
+        results: list[tuple[list, str, float]],
+        line_threshold: float = 0.5,
+    ) -> str:
+        """
+        Group detected text into lines based on vertical position.
+
+        Args:
+            results: List of OCR results (bounding_box, text, confidence).
+            line_threshold: Threshold for grouping text into same line.
+                            Expressed as a fraction of average text height.
+
+        Returns:
+            Text grouped by lines, with lines separated by newlines.
+        """
+        if not results:
+            return ""
+
+        # Extract text with position info (using center Y and left X of bounding box)
+        text_items: list[dict] = []
+        for bbox, text, confidence in results:
+            points = np.array(bbox)
+            center_y = np.mean(points[:, 1])
+            left_x = np.min(points[:, 0])
+            height = np.max(points[:, 1]) - np.min(points[:, 1])
+            text_items.append({
+                "text": text,
+                "center_y": center_y,
+                "left_x": left_x,
+                "height": height,
+            })
+
+        # Calculate average text height for threshold
+        avg_height = np.mean([item["height"] for item in text_items])
+        y_threshold = avg_height * line_threshold
+
+        # Sort by vertical position first
+        text_items.sort(key=lambda item: item["center_y"])
+
+        # Group into lines
+        lines: list[list[dict]] = []
+        current_line: list[dict] = [text_items[0]]
+
+        for item in text_items[1:]:
+            if abs(item["center_y"] - current_line[0]["center_y"]) <= y_threshold:
+                current_line.append(item)
+            else:
+                lines.append(current_line)
+                current_line = [item]
+        lines.append(current_line)
+
+        # Sort each line by horizontal position and join
+        result_lines: list[str] = []
+        for line in lines:
+            line.sort(key=lambda item: item["left_x"])
+            line_text = " ".join(item["text"] for item in line)
+            result_lines.append(line_text)
+
+        return "\n".join(result_lines)
+
     def get_texture_data(
         self,
         image_path: str,
         line_color: tuple[int, int, int] = (0, 255, 0),
         line_thickness: int = 2,
-        text_separator: str = "\n",
+        line_threshold: float = 0.5,
     ) -> TextureResult:
         """
         Detect text and return texture data compatible with DearPyGui.
@@ -133,11 +195,16 @@ class Model:
         The texture data is a flat list of floats (RGBA values normalized to 0-1)
         that can be used directly with dpg.add_static_texture() or dpg.add_dynamic_texture().
 
+        Text is automatically grouped into lines based on vertical position,
+        making it suitable for reading documents and books.
+
         Args:
             image_path: Path to the input image.
             line_color: BGR color tuple for the polylines. Defaults to green.
             line_thickness: Thickness of the polylines.
-            text_separator: Separator for joining detected text strings.
+            line_threshold: Threshold for grouping text into same line.
+                            Expressed as a fraction of average text height.
+                            Lower values = stricter line grouping.
 
         Returns:
             TextureResult containing texture_data, width, height, and detected_text.
@@ -183,9 +250,8 @@ class Model:
         # Normalize to 0-1 range and flatten for DearPyGui
         texture_data = (image_rgba.astype(np.float32) / 255.0).flatten().tolist()
 
-        # Extract detected text
-        detected_texts = [text for bbox, text, confidence in results]
-        combined_text = text_separator.join(detected_texts)
+        # Group detected text by lines
+        combined_text = self._group_text_by_lines(results, line_threshold)
 
         return TextureResult(
             texture_data=texture_data,

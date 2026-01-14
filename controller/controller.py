@@ -30,10 +30,10 @@ class Controller:
 
     def load_image_callback(self):
         self._image_path = xdialog.open_file(title="Select Image",  filetypes=[("Images", "*.png *.jpg *.jpeg")], multiple=False)
+        dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
+        dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
 
         if self._image_path:
-            dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
-            dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
 
             width, height, _, data = dpg.load_image(self._image_path)
             with dpg.texture_registry():
