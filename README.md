@@ -86,7 +86,7 @@ python main.py
 - [NumPy](https://numpy.org/) — Numerical computing
 - [DearPyGui](https://github.com/hoffstadt/DearPyGui) — GUI framework
 - [pyperclip](https://github.com/asweigart/pyperclip) — Clipboard operations
-- [xdialog](https://github.com/xfxf/xdialog) — Native file dialogs
+- [xdialog](https://github.com/mathgeniuszach/xdialog) — Native file dialogs
 
 ## Project Structure
 
