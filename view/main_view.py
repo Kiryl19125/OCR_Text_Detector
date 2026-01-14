@@ -40,9 +40,9 @@ class MainView:
 
     @staticmethod
     def _create_second_column():
-        with dpg.child_window():
-            dpg.add_image_button(tag=Tag.COPY_TEXT_BUTTON, texture_tag=Tag.COPY_TEXT_TEXTURE)
-            dpg.add_separator()
+        dpg.add_image_button(tag=Tag.COPY_TEXT_BUTTON, texture_tag=Tag.COPY_TEXT_TEXTURE)
+        dpg.add_separator()
+        with dpg.child_window(width=-1, height=-1):
             dpg.add_input_text(tag=Tag.RESULT_TEXT, multiline=True, width=-1, height=-1)
 
     @staticmethod
