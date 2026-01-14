@@ -1,5 +1,6 @@
 import dearpygui.dearpygui as dpg
 from view.tags import Tag
+from view.themes import create_theme_imgui_default, create_theme_imgui_light, create_theme_imgui_dark
 
 class MainView:
 
@@ -19,6 +20,9 @@ class MainView:
     def _create_main_window():
         with dpg.window(tag=Tag.MAIN_WINDOW):
             with dpg.menu_bar():
+                with dpg.menu(label="Theme"):
+                    dpg.add_radio_button(items=["Default", "Dark", "Light"], default_value="Default",
+                                         callback=MainView._change_global_theme)
                 dpg.add_menu_item(tag=Tag.HELP_MENU_BUTTON, label="Help")
             with dpg.table(header_row=False, resizable=True, width=-1, height=-1):
                 dpg.add_table_column(init_width_or_weight=40)
@@ -101,23 +105,14 @@ class MainView:
 
     @staticmethod
     def _init_theme():
-        with dpg.theme() as global_theme:
-            with dpg.theme_component(dpg.mvAll):
-                # Styling
-                dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 8, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 8, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 8, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 8, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_TabRounding, 8, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_WindowTitleAlign, 0.5, 0.5, category=dpg.mvThemeCat_Core)
-                dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 12, category=dpg.mvThemeCat_Core)
-
-                # colors
-                dpg.add_theme_color(dpg.mvThemeCol_Button, (76, 127, 240))
-                dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (76, 127, 240))
-                dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (30, 33, 38))
-                dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (30, 33, 38))
-                dpg.add_theme_color(dpg.mvThemeCol_MenuBarBg, (44, 49, 60))
+        dpg.bind_theme(create_theme_imgui_default())
 
 
-        dpg.bind_theme(global_theme)
+    @staticmethod
+    def _change_global_theme(_sender, value):
+        if value == "Default":
+            dpg.bind_theme(create_theme_imgui_default())
+        elif value == "Dark":
+            dpg.bind_theme(create_theme_imgui_dark())
+        elif value == "Light":
+            dpg.bind_theme(create_theme_imgui_light())
