@@ -35,7 +35,7 @@ class MainView:
             dpg.add_image_button(tag=Tag.LOAD_IMAGE_BUTTON, texture_tag=Tag.LOAD_IMAGE_TEXTURE)
             dpg.add_image_button(tag=Tag.DETECT_TEXT_BUTTON, texture_tag=Tag.DETECT_TEXT_TEXTURE)
         dpg.add_separator()
-        with dpg.child_window():
+        with dpg.child_window(tag=Tag.IMAGE_WINDOW, width=-1, height=-1):
             pass
 
     @staticmethod

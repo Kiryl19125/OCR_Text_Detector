@@ -21,7 +21,7 @@ class TextureResult:
     detected_text: str
 
 
-class TextDetector:
+class Model:
     """A class for detecting and highlighting text in images using EasyOCR."""
 
     def __init__(
