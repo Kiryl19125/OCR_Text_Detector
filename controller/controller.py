@@ -29,7 +29,8 @@ class Controller:
         dpg.show_item(Tag.HELP_WINDOW)
 
     def load_image_callback(self):
-        self._image_path = xdialog.open_file(title="Select Image",  filetypes=[("Images", "*.png *.jpg *.jpeg")], multiple=False)
+        self._image_path = xdialog.open_file(
+            title="Select Image",  filetypes=[("Images", "*.png *.jpg *.jpeg")], multiple=False)
         dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
         dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
 
