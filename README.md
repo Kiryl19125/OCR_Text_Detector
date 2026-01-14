@@ -27,7 +27,28 @@ A desktop application for detecting and extracting text from images using OCR (O
 3. Run the installer and follow the instructions
 4. Navigate to the folder where you extracted the app and run the `.exe` file
 
-### Option 2: Run from Source
+### Option 2: Quick Start (Run from Source)
+
+1. **Clone the repository:**
+
+```bash
+git clone https://github.com/Kiryl19125/OCR_Text_Detector.git
+cd OCR_Text_Detector
+```
+
+2. **Run the setup script:**
+
+```bash
+python setup.py
+```
+or
+```bash
+python3 setup.py
+```
+
+This will automatically create a virtual environment, install dependencies, and start the app.
+
+### Option 3: Manual Setup (Run from Source)
 
 #### Prerequisites
 
@@ -47,6 +68,10 @@ cd OCR_Text_Detector
 
 ```bash
 python -m venv .venv
+```
+or 
+```bash
+python3 -m venv .venv
 ```
 
 3. **Activate the virtual environment:**
@@ -113,6 +138,7 @@ OCR_Text_Detector/
 ├── .gitignore
 ├── LICENSE
 ├── main.py                  # Application entry point
+├── setup.py                 # Quick start script
 ├── README.md
 └── requirements.txt
 ```
