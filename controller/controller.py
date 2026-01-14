@@ -1,12 +1,18 @@
-import dearpygui.dearpygui as dpg
-import xdialog
-import pyperclip
-from view.main_view import MainView
-from model.model import Model
-from view.tags import Tag
+"""Controller module for the OCR Text Detection application."""
+
 from concurrent.futures import ThreadPoolExecutor
 
+import dearpygui.dearpygui as dpg
+import pyperclip
+import xdialog
+
+from model.model import Model
+from view.main_view import MainView
+from view.tags import Tag
+
+
 class Controller:
+    """Controller class that handles user interactions and coordinates model and view."""
 
     def __init__(self, model: Model, view: MainView):
         self._model = model
@@ -15,38 +21,67 @@ class Controller:
         self.executor = ThreadPoolExecutor(max_workers=2)
 
     def init_view(self):
+        """Initialize the view by creating all UI components."""
         self._view.create_view()
 
     def init_controller(self):
-        dpg.set_item_callback(item=Tag.HELP_MENU_BUTTON, callback=Controller.help_callback)
-        dpg.set_item_callback(item=Tag.COPY_TEXT_BUTTON, callback=Controller.copy_to_clipboard_callback)
-        dpg.set_item_callback(item=Tag.LOAD_IMAGE_BUTTON, callback=self.load_image_callback)
-        dpg.set_item_callback(item=Tag.DETECT_TEXT_BUTTON, callback=self.process_image_callback)
+        """Set up callbacks for all interactive UI elements."""
+        dpg.set_item_callback(
+            item=Tag.HELP_MENU_BUTTON, callback=Controller.help_callback
+        )
+        dpg.set_item_callback(
+            item=Tag.COPY_TEXT_BUTTON, callback=Controller.copy_to_clipboard_callback
+        )
+        dpg.set_item_callback(
+            item=Tag.LOAD_IMAGE_BUTTON, callback=self.load_image_callback
+        )
+        dpg.set_item_callback(
+            item=Tag.DETECT_TEXT_BUTTON, callback=self.process_image_callback
+        )
 
     @staticmethod
     def help_callback():
+        """Display the help window centered on screen."""
         Controller._center_window(Tag.HELP_WINDOW)
         dpg.show_item(Tag.HELP_WINDOW)
 
     def load_image_callback(self):
+        """Open file dialog and load the selected image into the view."""
         self._image_path = xdialog.open_file(
-            title="Select Image",  filetypes=[("Images", "*.png *.jpg *.jpeg")], multiple=False)
+            title="Select Image",
+            filetypes=[("Images", "*.png *.jpg *.jpeg")],
+            multiple=False
+        )
         dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
         dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
 
         if self._image_path:
-
             width, height, _, data = dpg.load_image(self._image_path)
             with dpg.texture_registry():
-                dpg.add_static_texture(width=width, height=height, default_value=data, tag=Tag.CURRENT_IMAGE_TEXTURE)
+                dpg.add_static_texture(
+                    width=width,
+                    height=height,
+                    default_value=data,
+                    tag=Tag.CURRENT_IMAGE_TEXTURE
+                )
 
-            dpg.add_image(tag=Tag.CURRENT_IMAGE, texture_tag=Tag.CURRENT_IMAGE_TEXTURE, parent=Tag.IMAGE_WINDOW,
-                          width=600, height=Controller._calculate_height(
-                    new_width=600, current_width=width, current_height=height))
+            new_height = Controller._calculate_height(
+                new_width=600, current_width=width, current_height=height
+            )
+            dpg.add_image(
+                tag=Tag.CURRENT_IMAGE,
+                texture_tag=Tag.CURRENT_IMAGE_TEXTURE,
+                parent=Tag.IMAGE_WINDOW,
+                width=600,
+                height=new_height
+            )
 
     def process_image_callback(self):
+        """Start OCR processing on the loaded image in a background thread."""
         if self._image_path:
-            feature = self.executor.submit(lambda: self._model.get_texture_data(self._image_path))
+            feature = self.executor.submit(
+                lambda: self._model.get_texture_data(self._image_path)
+            )
             feature.add_done_callback(Controller._on_complete)
             dpg.delete_item(item=Tag.CURRENT_IMAGE_TEXTURE, children_only=False)
             dpg.delete_item(item=Tag.CURRENT_IMAGE, children_only=False)
@@ -57,26 +92,41 @@ class Controller:
 
     @staticmethod
     def copy_to_clipboard_callback():
+        """Copy the detected text to the system clipboard."""
         pyperclip.copy(dpg.get_value(Tag.RESULT_TEXT))
         xdialog.info(title="Info", message="The text has been successfully copied")
 
     @staticmethod
     def _on_complete(feature):
+        """Handle completion of OCR processing and update the view with results."""
         result = feature.result()
 
         with dpg.texture_registry():
-            dpg.add_static_texture(width=result.width, height=result.height,
-                                   default_value=result.texture_data, tag=Tag.CURRENT_IMAGE_TEXTURE)
+            dpg.add_static_texture(
+                width=result.width,
+                height=result.height,
+                default_value=result.texture_data,
+                tag=Tag.CURRENT_IMAGE_TEXTURE
+            )
 
-        dpg.add_image(tag=Tag.CURRENT_IMAGE, texture_tag=Tag.CURRENT_IMAGE_TEXTURE, parent=Tag.IMAGE_WINDOW,
-                      width=600, height=Controller._calculate_height(
-                    new_width=600, current_width=result.width, current_height=result.height
-            ))
+        new_height = Controller._calculate_height(
+            new_width=600,
+            current_width=result.width,
+            current_height=result.height
+        )
+        dpg.add_image(
+            tag=Tag.CURRENT_IMAGE,
+            texture_tag=Tag.CURRENT_IMAGE_TEXTURE,
+            parent=Tag.IMAGE_WINDOW,
+            width=600,
+            height=new_height
+        )
         dpg.set_value(item=Tag.RESULT_TEXT, value=result.detected_text)
         dpg.configure_item(item=Tag.LOADING_WINDOW, show=False)
 
     @staticmethod
     def _center_window(tag):
+        """Center a window in the viewport."""
         viewport_width = dpg.get_viewport_client_width()
         viewport_height = dpg.get_viewport_client_height()
 
@@ -88,10 +138,9 @@ class Controller:
 
         dpg.set_item_pos(tag, [pos_x, pos_y])
 
-
     @staticmethod
     def _calculate_height(new_width: int, current_width, current_height: int) -> int:
-        # Calculate the scale factor
+        """Calculate new height maintaining aspect ratio."""
         aspect_ratio = current_height / current_width
         new_height = int(new_width * aspect_ratio)
         return new_height
