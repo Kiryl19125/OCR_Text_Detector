@@ -29,6 +29,12 @@ A desktop application for detecting and extracting text from images using OCR (O
 
 ### Option 2: Quick Start (Run from Source)
 
+#### Prerequisites
+
+- git (Version Control System)
+- Python 3.10, 3.11 or 3.12
+- pip (Python package manager)
+
 1. **Clone the repository:**
 
 ```bash
@@ -52,6 +58,7 @@ This will automatically create a virtual environment, install dependencies, and 
 
 #### Prerequisites
 
+- git (Version Control System)
 - Python 3.10, 3.11 or 3.12
 - pip (Python package manager)
 
