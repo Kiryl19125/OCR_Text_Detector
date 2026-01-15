@@ -19,7 +19,8 @@ A desktop application for detecting and extracting text from images using OCR (O
 ![Image loaded](resources/screenshots/screenshot_2.png)
 
 ## Installation
-
+> **Note:** The first launch requires an internet connection, as the EasyOCR library needs to download model files.
+> Subsequent launches do not require an internet connection.
 ### Option 1: Windows Installer (Recommended)
 
 1. Go to the [Releases](https://github.com/Kiryl19125/OCR_Text_Detector/releases) page
